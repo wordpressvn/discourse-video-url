@@ -1,0 +1,4 @@
+en:
+  site_settings:
+    discourse_video_url_enabled: "Enable DiscourseVideoUrl plugin"
+    discourse_video_url_allowed_extensions: "Allowed file extensions"

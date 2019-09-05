@@ -1,0 +1,7 @@
+plugins:
+  discourse_video_url_enabled:
+    default: true
+  discourse_video_url_allowed_extensions:
+    default: "mp4"
+    type: list
+    list_type: compact
