@@ -18,7 +18,9 @@ after_initialize do
             .order(created_at: :desc)
             .where(extension: SiteSetting.discourse_video_url_allowed_extensions.split("|"))
             .first
-            .url
+            &.url
+
+    return if url.blank?
 
     Discourse.store.external? ? Discourse.store.cdn_url(url) : "#{Discourse.base_url}#{url}"
   end
@@ -31,7 +33,9 @@ after_initialize do
             .order(created_at: :desc)
             .where(extension: SiteSetting.discourse_video_url_allowed_extensions.split("|"))
             .first
-            .url
+            &.url
+
+    return if url.blank?
 
     Discourse.store.external? ? Discourse.store.cdn_url(url) : "#{Discourse.base_url}#{url}"
   end
