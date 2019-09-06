@@ -12,23 +12,27 @@ after_initialize do
   add_to_serializer :topic_list_item, :video_url do
     return if object&.first_post&.uploads.blank?
 
-    object
-      .first_post
-      .uploads
-      .order(created_at: :desc)
-      .where(extension: SiteSetting.discourse_video_url_allowed_extensions.split("|"))
-      .first
-      &.url
+    url = object
+            .first_post
+            .uploads
+            .order(created_at: :desc)
+            .where(extension: SiteSetting.discourse_video_url_allowed_extensions.split("|"))
+            .first
+            .url
+
+    Discourse.store.external? ? Discourse.store.cdn_url(url) : "#{Discourse.base_url}#{url}"
   end
 
   add_to_serializer :post, :video_url do
     return if object&.uploads.blank?
 
-    object
-      .uploads
-      .order(created_at: :desc)
-      .where(extension: SiteSetting.discourse_video_url_allowed_extensions.split("|"))
-      .first
-      &.url
+    url = object
+            .uploads
+            .order(created_at: :desc)
+            .where(extension: SiteSetting.discourse_video_url_allowed_extensions.split("|"))
+            .first
+            .url
+
+    Discourse.store.external? ? Discourse.store.cdn_url(url) : "#{Discourse.base_url}#{url}"
   end
 end

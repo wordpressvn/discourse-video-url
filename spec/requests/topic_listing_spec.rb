@@ -14,28 +14,95 @@ RSpec.describe "topic listing" do
     Fabricate(:post, raw: raw)
   end
 
-  let(:video_upload) { Fabricate(:video_upload) }
-
   before do
     SiteSetting.authorized_extensions = "#{SiteSetting.authorized_extensions}|mp4"
-    post.uploads << video_upload
   end
 
-  it "includes video_url on topic listing" do
-    get "/latest.json"
+  context "with local storage" do
+    let(:video_upload) { Fabricate(:video_upload) }
+    let(:base_url) { Discourse.base_url }
 
-    topics = JSON.parse(response.body)["topic_list"]["topics"]
+    before { post.uploads << video_upload }
 
-    expect(response.status).to eq(200)
-    expect(topics.first["video_url"]).to eq(video_upload.url)
+    it "includes video_url on topic listing" do
+      get "/latest.json"
+
+      topics = JSON.parse(response.body)["topic_list"]["topics"]
+
+      expect(response.status).to eq(200)
+      expect(topics.first["video_url"]).to eq("#{base_url}#{video_upload.url}")
+    end
+
+    it "includes video_url on topic show" do
+      get "/t/#{post.topic.id}.json"
+
+      post = JSON.parse(response.body).dig("post_stream", "posts").first
+
+      expect(response.status).to eq(200)
+      expect(post["video_url"]).to eq("#{base_url}#{video_upload.url}")
+    end
   end
 
-  it "includes video_url on topic show" do
-    get "/t/#{post.topic.id}.json"
+  context "with S3 storage" do
+    let(:video_upload) { Fabricate(:upload_s3, original_filename: "video.mp4", extension: "mp4") }
 
-    post = JSON.parse(response.body).dig("post_stream", "posts").first
+    before do
+      SiteSetting.enable_s3_uploads = true
+      SiteSetting.s3_access_key_id = "key"
+      SiteSetting.s3_secret_access_key = "secret"
+      SiteSetting.s3_upload_bucket = "test-bucket"
 
-    expect(response.status).to eq(200)
-    expect(post["video_url"]).to eq(video_upload.url)
+      post.uploads << video_upload
+    end
+
+    it "includes video_url on topic listing" do
+      get "/latest.json"
+
+      topics = JSON.parse(response.body)["topic_list"]["topics"]
+
+      expect(response.status).to eq(200)
+      expect(topics.first["video_url"]).to eq(video_upload.url)
+    end
+
+    it "includes video_url on topic show" do
+      get "/t/#{post.topic.id}.json"
+
+      post = JSON.parse(response.body).dig("post_stream", "posts").first
+
+      expect(response.status).to eq(200)
+      expect(post["video_url"]).to eq(video_upload.url)
+    end
+  end
+
+  context "with S3 storage" do
+    let(:video_upload) { Fabricate(:upload_s3, original_filename: "video.mp4", extension: "mp4") }
+
+    before do
+      SiteSetting.enable_s3_uploads = true
+      SiteSetting.s3_access_key_id = "key"
+      SiteSetting.s3_secret_access_key = "secret"
+      SiteSetting.s3_upload_bucket = "test-bucket"
+      SiteSetting.s3_cdn_url = "https://assets.test.com"
+
+      post.uploads << video_upload
+    end
+
+    it "includes video_url on topic listing" do
+      get "/latest.json"
+
+      topics = JSON.parse(response.body)["topic_list"]["topics"]
+
+      expect(response.status).to eq(200)
+      expect(topics.first["video_url"]).to eq(Discourse.store.cdn_url(video_upload.url))
+    end
+
+    it "includes video_url on topic show" do
+      get "/t/#{post.topic.id}.json"
+
+      post = JSON.parse(response.body).dig("post_stream", "posts").first
+
+      expect(response.status).to eq(200)
+      expect(post["video_url"]).to eq(Discourse.store.cdn_url(video_upload.url))
+    end
   end
 end
