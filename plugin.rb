@@ -22,7 +22,11 @@ after_initialize do
 
     return if url.blank?
 
-    Discourse.store.external? ? Discourse.store.cdn_url(url) : "#{Discourse.base_url}#{url}"
+    if Discourse.store.external?
+      url.start_with?("//") ? Discourse.store.cdn_url(url) : "#{Discourse.base_url}#{url}"
+    else
+      "#{Discourse.base_url}#{url}"
+    end
   end
 
   add_to_serializer :post, :video_url do
@@ -37,6 +41,10 @@ after_initialize do
 
     return if url.blank?
 
-    Discourse.store.external? ? Discourse.store.cdn_url(url) : "#{Discourse.base_url}#{url}"
+    if Discourse.store.external?
+      url.start_with?("//") ? Discourse.store.cdn_url(url) : "#{Discourse.base_url}#{url}"
+    else
+      "#{Discourse.base_url}#{url}"
+    end
   end
 end
